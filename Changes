@@ -1,3 +1,14 @@
+1999-08-10  Dominique Dumont  <domi@barrayar.grenoble.hp.com>
+
+	* Show.pm: - bug fix on destroy (destroy menus only if they exists)
+	- bug fix on print event (does not print double lines)
+	- added onDestroy callback called when the display is destroyed
+
+
+1999-07-26  Dominique Dumont  <domi@barrayar.grenoble.hp.com>
+
+	* t/show.t (display): fix pb with toto and raymond tests
+
 1999-06-02  Dominique Dumont  <domi@barrayar.grenoble.hp.com>
 
 	* Show.pm (acquire): check the object type passed

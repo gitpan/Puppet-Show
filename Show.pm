@@ -1,9 +1,9 @@
 ############################################################
 #
-# $Header: /home/domi/Tools/perlDev/Puppet_Show/RCS/Show.pm,v 1.5 1999/06/02 11:59:23 domi Exp $
+# $Header: /mnt/barrayar/d06/home/domi/Tools/perlDev/Puppet_Show/RCS/Show.pm,v 1.7 1999/08/10 13:27:21 domi Exp $
 #
-# $Source: /home/domi/Tools/perlDev/Puppet_Show/RCS/Show.pm,v $
-# $Revision: 1.5 $
+# $Source: /mnt/barrayar/d06/home/domi/Tools/perlDev/Puppet_Show/RCS/Show.pm,v $
+# $Revision: 1.7 $
 # $Locker:  $
 # 
 ############################################################
@@ -20,7 +20,7 @@ use AutoLoader 'AUTOLOAD' ;
 
 use strict ;
 use vars qw($VERSION) ;
-$VERSION = sprintf "%d.%03d", q$Revision: 1.5 $ =~ /(\d+)\.(\d+)/; 
+$VERSION = sprintf "%d.%03d", q$Revision: 1.7 $ =~ /(\d+)\.(\d+)/; 
 
 sub new 
   {
@@ -243,6 +243,10 @@ master: Optional. You can set it to 1 if this object will be the master
 object of your application. In this case, destroying its display
 (with the File->close menu for instance) will make the application exit.
 
+=item *
+
+onDestroy: sub ref to call back when the display is destroyed.
+
 =back
 
 Return the L<Tk::Multi::Toplevel> object if a display is actually created,
@@ -343,7 +347,10 @@ sub drop
 
     foreach my $name (@_)
       {
-        $self->{multitop}->menuRemove(name => $name,menu => 'content');
+        #print "self-{multitop} defined \n" if defined $self->{multitop};
+        #print "self-{multitop} NOT defined \n" unless defined $self->{multitop};
+        $self->{multitop}->menuRemove(name => $name,menu => 'content')
+          if defined $self->{multitop};
       }
   }
 
@@ -364,6 +371,7 @@ sub display
     my %args = @_;
 
     my $master = $args{master}; # master destroyed -> exit ;
+    my $onDestroy = $args{onDestroy} ; # sub ref to perform cleanup;
 
     if (defined $self->{multitop})
       {
@@ -390,8 +398,22 @@ sub display
       );
 
     my $dsub ;
-    if (defined $master and $master) {$dsub = sub{$self->{topTk}->destroy;};}
-    else {$dsub = sub{delete $self->{multitop};};}
+    if (defined $master and $master) 
+      {
+        $dsub = sub
+          {
+            &$onDestroy if defined $onDestroy ;
+            $self->{topTk}->destroy;
+          } ;
+      }
+    else 
+      {
+        $dsub = sub
+          {
+            &$onDestroy if defined $onDestroy ;
+            delete $self->{multitop};
+          };
+      }
 
     $self->{multitop} -> OnDestroy($dsub); 
 
@@ -455,8 +477,11 @@ sub showEvent
 sub printEvent
   {
     my $self = shift ;
-    $self->SUPER::printEvent(@_);
-    $self->SUPER::printDebug(@_); # so that debug output are readable
+    my $text=shift ;
+    $self->{'log'}{'event'}->log($text) ;
+    # so that tk debug output are readable 
+    $self->{'log'}{debug}  ->log($text, how => undef);
   }
+
 1;
 

@@ -6,7 +6,7 @@
 # Change 1..1 below to 1..last_test_to_print .
 # (It may become useful if the test is moved to ./t subdirectory.)
 
-BEGIN { $| = 1; print "1..7\n"; }
+BEGIN { $| = 1; print "1..8\n"; }
 END {print "not ok 1\n" unless $loaded;}
 use Tk ;
 use Fcntl ;
@@ -53,7 +53,7 @@ sub addChildren
     foreach my $n (qw/albert charlotte raymond spirou zorglub/)
       {
         my $obj = new MyTest (name => $n, title => 'Tk name for '.$n,
-                              'topTk' => $self->{topTk});
+                              'topTk' => $self->{topTk}, how => 'print' );
         $self->{body}->acquire(body => $obj->body);
       }
   }
@@ -94,7 +94,8 @@ sub display
        '-label' => 'rm toto', 
        -command => sub
        {
-         $self->{body}->drop('toto')
+         $self->{body}->drop('toto') 
+           if defined $self->{body}->getContent('toto');
        }
       ) ;
 
@@ -117,7 +118,7 @@ sub display
            {
              $self->{content}{'raymond'}->closeDisplay ;
            } 
-         else {$self->{tk}{toplevel}->bell;}
+         else {$self->{topTk}->bell;}
        }
       ) ;
 
@@ -158,8 +159,14 @@ print "ok ",$idx++,"\n";
 $test->display( master => 1);
 print "ok ",$idx++,"\n";
 
+my $a = $test->body()->getContent('albert');
+$a->printDebug("printed debug log");
+$a->printEvent("printed event log");
+print "ok ",$idx++,"\n";
+
 #$test->showEvent;
 
 MainLoop ; # Tk's
 
 print "ok ",$idx++,"\n";
+ 
