@@ -1,9 +1,9 @@
 ############################################################
 #
-# $Header: /mnt/barrayar/d06/home/domi/Tools/perlDev/Puppet_Show/RCS/Show.pm,v 1.3 1999/02/05 12:02:41 domi Exp $
+# $Header: /home/domi/Tools/perlDev/Puppet_Show/RCS/Show.pm,v 1.5 1999/06/02 11:59:23 domi Exp $
 #
-# $Source: /mnt/barrayar/d06/home/domi/Tools/perlDev/Puppet_Show/RCS/Show.pm,v $
-# $Revision: 1.3 $
+# $Source: /home/domi/Tools/perlDev/Puppet_Show/RCS/Show.pm,v $
+# $Revision: 1.5 $
 # $Locker:  $
 # 
 ############################################################
@@ -14,14 +14,13 @@ use Carp ;
 use Tk::Multi::Manager ;
 use Tk::Multi::Text ;
 use Tk::Multi::Toplevel ;
-use Puppet::Body;
+use base Puppet::Body;
 use Puppet::Log ;
 use AutoLoader 'AUTOLOAD' ;
 
 use strict ;
-use vars qw($VERSION @ISA) ;
-$VERSION = sprintf "%d.%03d", q$Revision: 1.3 $ =~ /(\d+)\.(\d+)/; 
-@ISA=qw/Puppet::Body/;
+use vars qw($VERSION) ;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.5 $ =~ /(\d+)\.(\d+)/; 
 
 sub new 
   {
@@ -34,7 +33,8 @@ sub new
     $self->{topTk} = $topTk;
     $self->{podName} = $args{podName} || 'Puppet::Show';
     $self->{podSection} = $args{podSection} || 'DESCRIPTION';
-   
+    $self->{title} = $args{title} || $self->{name} ;
+
     die "No parameter topTk passed to Puppet::Show $self->{name}\n"
       unless defined $topTk ;
     return $self;
@@ -248,6 +248,10 @@ object of your application. In this case, destroying its display
 Return the L<Tk::Multi::Toplevel> object if a display is actually created,
 undef otherwise (i.e is the display already exists).
 
+=head2 myDisplay()
+
+Return the L<Tk::Multi::Toplevel> object created by the display method.
+
 =head2 closeDisplay()
 
 Close the display. Note that the display can be re-created later.
@@ -282,6 +286,9 @@ sub acquire
     my $raise = $args{raise} ;
     my $ref = $args{body};
     my $myRaise = $args{myRaise};
+
+    croak("The object passed with body parameter is not a Puppet::Show object\n")
+      unless $ref->isa( __PACKAGE__ ) ;
    
     $self->SUPER::acquire(raise => $raise, body => $ref);
 
@@ -316,7 +323,7 @@ sub updateMenu
       defined $raise ? sub{$ref->cloth->$raise(); } :
         sub{$ref->cloth->display(); } ;
     
-    my $name = $args{name} || $ref->getName();
+    my $name = $ref->getName();
 
     $self->{multitop}->menuCommand
       (
@@ -343,7 +350,6 @@ sub drop
 sub droppedBy
   {
     my $self = shift ;
-    my $ref = shift;
 
     $self->closeDisplay unless $self->SUPER::droppedBy(@_);
   }
@@ -369,12 +375,14 @@ sub display
     
     my $type = ref($self) ;
     $type =~ s/^.*::// ;
-    my $labelName = ref($self->cloth).': '.$self->{'name'} ;
+    my $labelName = ref($self->cloth).': ';
+    if (defined $self->{title}) {$labelName .= $self->{title};} 
+    else {$labelName .= $self->{'name'} ;} 
     
     $self->printDebug("Creating Multitop display for ".ref($self)."\n") ;
 
     my $poof ;
-    $self->{multitop} = $self->{topTk} -> MultiTop
+    my $top = $self->{multitop} = $self->{topTk} -> MultiTop
       (
        podName => $self->{podName},
        podSection => $self->{podSection},
@@ -382,7 +390,7 @@ sub display
       );
 
     my $dsub ;
-    if (defined $master and $master) { $dsub = sub{$self->{topTk}->destroy;};}
+    if (defined $master and $master) {$dsub = sub{$self->{topTk}->destroy;};}
     else {$dsub = sub{delete $self->{multitop};};}
 
     $self->{multitop} -> OnDestroy($dsub); 
@@ -416,6 +424,11 @@ sub display
     return $self->{multitop} ;
   }
 
+sub myDisplay
+  {
+    return shift->{multitop} ;
+  }
+
 sub closeDisplay
   {
     my $self = shift ;
@@ -439,5 +452,11 @@ sub showEvent
     $self->{'log'}{'event'} -> show ();
   }
 
+sub printEvent
+  {
+    my $self = shift ;
+    $self->SUPER::printEvent(@_);
+    $self->SUPER::printDebug(@_); # so that debug output are readable
+  }
 1;
 

@@ -6,9 +6,11 @@
 # Change 1..1 below to 1..last_test_to_print .
 # (It may become useful if the test is moved to ./t subdirectory.)
 
-BEGIN { $| = 1; print "1..6\n"; }
+BEGIN { $| = 1; print "1..7\n"; }
 END {print "not ok 1\n" unless $loaded;}
 use Tk ;
+use Fcntl ;
+use MLDBM qw(DB_File) ;
 use ExtUtils::testlib;
 use Puppet::Show ;
 use Tk::ErrorDialog; 
@@ -50,7 +52,8 @@ sub addChildren
     # create myself some children
     foreach my $n (qw/albert charlotte raymond spirou zorglub/)
       {
-        my $obj = new MyTest (name => $n, 'topTk' => $self->{topTk});
+        my $obj = new MyTest (name => $n, title => 'Tk name for '.$n,
+                              'topTk' => $self->{topTk});
         $self->{body}->acquire(body => $obj->body);
       }
   }
@@ -77,8 +80,11 @@ sub display
        {        
          my $t =new MyTest (name => 'toto', 'topTk' => $self->{topTk});
          
-         $self->{body}->acquire(body => $t->body,
-                               raise => sub {print "toto displayed";$t->display;} ) ;
+         $self->{body}->acquire
+           (
+            body => $t->body,
+            raise => sub {warn "toto displayed";$t->display;} 
+           ) ;
        }
       ) ;
     
@@ -86,14 +92,20 @@ sub display
       (
        'command',
        '-label' => 'rm toto', 
-       -command => sub{$self->drop('toto')}
+       -command => sub
+       {
+         $self->{body}->drop('toto')
+       }
       ) ;
 
     $top->add
       (
        'command',
        '-label' => 'acquire common', 
-       -command => sub{$self->{body}->acquire(body => $main::common->body);}
+       -command => sub
+       {
+         $self->{body}->acquire(body => $main::common->body);
+       }
       ) ;
 
     $top->add
@@ -119,12 +131,20 @@ sub display
 
 package main ;
 
+my $file = 'test.db';
+my %dbhash;
+tie %dbhash,  'MLDBM',    $file , O_CREAT|O_RDWR, 0640 or die $! ;
+print "ok ",$idx++,"\n";
+
 my $mw = MainWindow-> new ;
 $mw->withdraw ;
 
 my @a = defined $trace ? qw/how print/ : ();
 
 my $test = new MyTest(name => 'main test', 
+                      dbHash => \%dbhash,
+                      keyRoot => 'key root',
+                      title => 'Tk name for main test',
                       'topTk' => $mw, @a) ;
 
 print "ok ",$idx++,"\n";

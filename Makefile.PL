@@ -15,7 +15,7 @@ WriteMakefile(
                'Tk::Multi::Text' => '2.001',
                'Tk::Multi::Toplevel' => '1.002',
                'Puppet::Log'=> '1.010',
-               'Puppet::Body'=> '1.012',
+               'Puppet::Body'=> '1.013',
                'Tk::Pod' => 0,
                'MLDBM' => 0,
                'DB_File' => 0
