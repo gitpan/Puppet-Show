@@ -1,0 +1,69 @@
+Puppet::Show is a utility class that is used (and not inherited like
+the deprecated Puppet::Any) to manage a L<Puppet::Body> class through
+an optional GUI.
+
+So when you construct a Puppet::Show object, you have all the
+functionnality of this object without the GUI. Then, when the need
+arises, you may (or the user class may decide to) open the GUI of
+Puppet::Show so the user may perform any interactive action.
+
+On the other hand, if the need does not arise, you may instanciate a lot of 
+objects (which uses Puppet::Show) without cluttering your display.
+
+Suggested DSLI entry in the Tk Module list (section Module using Tk):
+
+Puppet::Show adpO Optional Tk Gui for Puppet::Body         DDUMONT
+
+
+The user class may use the Puppet::Show Tk widget (actually a
+Tk::Multi::Toplevel widget) and add its own widget to customize the
+GUI to its needs.
+
+This class features :
+
+- A Tk::Multi::Toplevel to show or hide the different display of the
+  Show class (or of the user class)
+- A menu bar
+- An online help
+- An event log display so user object may log their activity
+- A Debug log display so user objects may log their "accidental"
+  activities
+- An Object Scanner display the attributes of the user object
+- A set of functions to manage "has-a" relationship between Puppet
+  objects.The menu bar feature a "content" bar which enabled the user
+  to open the display of all "contained" objects.
+- a facility to store data on a database file tied to a hash.
+
+
+I'd like people who use this module for their application to drop me a
+short note about what they're using this module for.
+
+See the embedded documentation in the module for more details.
+
+Comments and suggestions are always welcome.
+
+Legal mumbo jumbo:
+
+ Copyright (c) 1998-1999 Dominique Dumont. All rights reserved.
+ This program is free software; you can redistribute it and/or
+ modify it under the same terms as Perl itself.
+
+ - Dominique Dumont
+   dominique_dumont@grenoble.hp.com
+
+---------------------------------------------------------------------
+INSTALLATION
+
+   	 gunzip -c <dist_file>.tar.gz | tar xvf -
+   	 cd <dist_directory>
+   	 perl Makefile.PL
+   	 make test          
+   	 make install
+
+
+
+
+
+
+
+
