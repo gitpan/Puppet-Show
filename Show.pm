@@ -1,9 +1,9 @@
 ############################################################
 #
-# $Header: /home/domi/Tools/perlDev/Puppet_Show/RCS/Show.pm,v 1.2 1999/01/08 16:28:53 domi Exp $
+# $Header: /mnt/barrayar/d06/home/domi/Tools/perlDev/Puppet_Show/RCS/Show.pm,v 1.3 1999/02/05 12:02:41 domi Exp $
 #
-# $Source: /home/domi/Tools/perlDev/Puppet_Show/RCS/Show.pm,v $
-# $Revision: 1.2 $
+# $Source: /mnt/barrayar/d06/home/domi/Tools/perlDev/Puppet_Show/RCS/Show.pm,v $
+# $Revision: 1.3 $
 # $Locker:  $
 # 
 ############################################################
@@ -20,7 +20,7 @@ use AutoLoader 'AUTOLOAD' ;
 
 use strict ;
 use vars qw($VERSION @ISA) ;
-$VERSION = sprintf "%d.%03d", q$Revision: 1.2 $ =~ /(\d+)\.(\d+)/; 
+$VERSION = sprintf "%d.%03d", q$Revision: 1.3 $ =~ /(\d+)\.(\d+)/; 
 @ISA=qw/Puppet::Body/;
 
 sub new 
@@ -35,7 +35,8 @@ sub new
     $self->{podName} = $args{podName} || 'Puppet::Show';
     $self->{podSection} = $args{podSection} || 'DESCRIPTION';
    
-    # topTk etait passe a new ...
+    die "No parameter topTk passed to Puppet::Show $self->{name}\n"
+      unless defined $topTk ;
     return $self;
   }
 
@@ -48,7 +49,6 @@ sub _createLogs
     foreach (qw/debug event/)
       {
         my $what = $_ ;
-        print "creating Log $_\n";
         $self->{'log'}{$_} = new Puppet::Log
           (
            title => $_,
@@ -203,14 +203,21 @@ Acquire the object ref as a child. Parameters are:
 
 =over 4
 
-=item body
+=item *
 
-Reference of the Puppet::Body object that is to be acquired.
+body: Reference of the Puppet::Body object that is to be acquired.
 
-=item raise
+=item *
 
-Sub reference or method to call on the user object when the object is raised.
-(Default to call display on the user object)
+raise: Sub reference or method to call on the user object when the
+object is raised (generally through the 'content' menu).  (Default to
+call display on the user object)
+
+=item *
+
+myRaise: Sub reference or method to call when this object is raised
+(generally through the 'container' menu).  (Default to call
+$self->display())
 
 =back
 
@@ -222,14 +229,26 @@ foo's content and foo is one of the container of bar.
 #'
 
 
-=head2 display()
+=head2 display(...)
 
 Creates a top level display for the user object.
+
+Parameters are:
+
+=over 4
+
+=item *
+
+master: Optional. You can set it to 1 if this object will be the master
+object of your application. In this case, destroying its display
+(with the File->close menu for instance) will make the application exit.
+
+=back
 
 Return the L<Tk::Multi::Toplevel> object if a display is actually created,
 undef otherwise (i.e is the display already exists).
 
-=head2 closeDisplay
+=head2 closeDisplay()
 
 Close the display. Note that the display can be re-created later.
 
@@ -260,12 +279,38 @@ sub acquire
     my $self = shift ;
     my %args = @_;
 
-    $self->SUPER::acquire(@_);
-
-    return unless defined $self->{multitop};
-    
     my $raise = $args{raise} ;
     my $ref = $args{body};
+    my $myRaise = $args{myRaise};
+   
+    $self->SUPER::acquire(raise => $raise, body => $ref);
+
+    return unless defined $self->{multitop};
+    $ref->whenAcquired(raise => $myRaise, body => $self);
+   
+    $self->updateMenu(raise => $raise,
+                      body => $ref, 
+                      menu => 'content');
+  }
+
+#internal
+sub whenAcquired
+  {
+    my $self = shift;
+    return unless defined $self->{multitop};
+    $self->updateMenu(@_,menu => 'container');
+  }
+
+#internal
+sub updateMenu
+  {
+    my $self = shift;
+    my %args = @_;
+
+    my $raise = $args{raise} ;
+    my $ref = $args{body};
+    my $menu = $args{menu};
+
     # method or sub ref to invoke when raising the object
     my $sub = ref($raise) eq 'CODE' ? $raise :
       defined $raise ? sub{$ref->cloth->$raise(); } :
@@ -276,7 +321,7 @@ sub acquire
     $self->{multitop}->menuCommand
       (
        name => $name,
-       menu => 'content',
+       menu =>$menu,
        command => $sub
       );
 
@@ -336,9 +381,11 @@ sub display
        manager => $self->cloth
       );
 
-    $self->{multitop} -> OnDestroy(sub{$self->{topTk}->destroy}) 
-      if (defined $master and $master);
+    my $dsub ;
+    if (defined $master and $master) { $dsub = sub{$self->{topTk}->destroy;};}
+    else {$dsub = sub{delete $self->{multitop};};}
 
+    $self->{multitop} -> OnDestroy($dsub); 
 
     $self->{multitop} -> title($labelName) ;
 
@@ -381,8 +428,8 @@ sub closeDisplay
         return ;
       }
 
+    # this element will be deleted by the OnDestroy hook set in display()
     $self->{multitop}->destroy;
-    delete $self->{multitop} ;
   }
 
 

@@ -1,3 +1,10 @@
+1999-02-05  Dominique Dumont  <domi@barrayar.grenoble.hp.com>
+
+	* Show.pm :
+	- fix close and re-open window problem
+	- correctly updates the container menu
+	- better doc
+
 
 1999-01-06  Dominique Dumont  <domi@barrayar.grenoble.hp.com>
 v1.002

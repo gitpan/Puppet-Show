@@ -76,8 +76,9 @@ sub display
        -command => sub
        {        
          my $t =new MyTest (name => 'toto', 'topTk' => $self->{topTk});
-
-         $self->{body}->acquire (body => $t->body) ;
+         
+         $self->{body}->acquire(body => $t->body,
+                               raise => sub {print "toto displayed";$t->display;} ) ;
        }
       ) ;
     
